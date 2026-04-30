@@ -269,7 +269,7 @@ function resetFilter(){
 
 function filteredPosts(){
   return RAW.posts.filter(function(p){
-    var d = parseDate([p.date](http://p.date));
+    var d = parseDate(p.date);
     return d && d >= filterStart && d <= filterEnd;
   });
 }
@@ -301,7 +301,7 @@ function renderAll(){
   var totalReach = posts.reduce(function(s,p){ return s+p.reach; }, 0);
   var avgReach = totalReach / n;
   var avgEng = posts.reduce(function(s,p){ return s+p.engagement_rate; }, 0) / n;
-  var avgSave = posts.reduce(function(s,p){ return s+[p.save](http://p.save)_rate; }, 0) / n;
+  var avgSave = posts.reduce(function(s,p){ return s+p.save_rate; }, 0) / n;
   var avgAuth = posts.reduce(function(s,p){ return s+p.authority_score; }, 0) / n;
   var totalViews = posts.reduce(function(s,p){ return s+p.views; }, 0);
   var totalSaves = posts.reduce(function(s,p){ return s+p.saves; }, 0);
@@ -321,14 +321,14 @@ function renderAll(){
     {label:'Novos Seguidores', value: fmtNum(totalFollows), sub:'total', cls:'up'},
   ];
   var kg = document.getElementById('kpi-grid');
-  kg.innerHTML = [kpis.map](http://kpis.map)(function(k){
+  kg.innerHTML = kpis.map(function(k){
     return '<div class="kpi"><div class="kpi-label">'+k.label+'</div><div class="kpi-value">'+k.value+'</div><div class="kpi-sub '+k.cls+'">'+k.sub+'</div></div>';
   }).join('');
 
   // Timeline
   var weekMap = {};
   posts.forEach(function(p){
-    var d = new Date([p.date](http://p.date) + 'T00:00:00');
+    var d = new Date(p.date + 'T00:00:00');
     var mon = new Date(d); mon.setDate(d.getDate() - d.getDay() + 1);
     var wk = mon.toISOString().substring(0,10);
     if(!weekMap[wk]) weekMap[wk] = {reach:[],eng:[]};
@@ -336,8 +336,8 @@ function renderAll(){
     weekMap[wk].eng.push(p.engagement_rate);
   });
   var weeks = Object.keys(weekMap).sort();
-  var wReach = [weeks.map](http://weeks.map)(function(w){ return Math.round(weekMap[w].reach.reduce(function(a,b){return a+b},0)/weekMap[w].reach.length); });
-  var wEng = [weeks.map](http://weeks.map)(function(w){ return parseFloat((weekMap[w].eng.reduce(function(a,b){return a+b},0)/weekMap[w].eng.length).toFixed(2)); });
+  var wReach = weeks.map(function(w){ return Math.round(weekMap[w].reach.reduce(function(a,b){return a+b},0)/weekMap[w].reach.length); });
+  var wEng = weeks.map(function(w){ return parseFloat((weekMap[w].eng.reduce(function(a,b){return a+b},0)/weekMap[w].eng.length).toFixed(2)); });
 
   destroyChart('timelineChart');
   var tlCtx = document.getElementById('timelineChart').getContext('2d');
@@ -370,7 +370,7 @@ function renderAll(){
       typeCounts[t]++;
       typeReach[t].push(p.reach);
       typeEng[t].push(p.engagement_rate);
-      typeSave[t].push([p.save](http://p.save)_rate);
+      typeSave[t].push(p.save_rate);
       typeAuth[t].push(p.authority_score);
       typeComm[t].push(p.comments);
     }
@@ -381,8 +381,8 @@ function renderAll(){
   var tdCtx = document.getElementById('typeDonut').getContext('2d');
   chartInstances['typeDonut'] = new Chart(tdCtx, {
     type:'doughnut',
-    data:{labels:['Reel ('+typeCounts.reel+')','Foto ('+[typeCounts.photo](http://typeCounts.photo)+')','Carrossel ('+typeCounts.carousel+')'],
-      datasets:[{data:[typeCounts.reel,[typeCounts.photo](http://typeCounts.photo),typeCounts.carousel],backgroundColor:['#a855f7','#3b82f6','#fcb045'],borderColor:'#111',borderWidth:3,hoverOffset:8}]},
+    data:{labels:['Reel ('+typeCounts.reel+')','Foto ('+typeCounts.photo+')','Carrossel ('+typeCounts.carousel+')'],
+      datasets:[{data:[typeCounts.reel,typeCounts.photo,typeCounts.carousel],backgroundColor:['#a855f7','#3b82f6','#fcb045'],borderColor:'#111',borderWidth:3,hoverOffset:8}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
       plugins:{legend:{position:'bottom',labels:{color:'#aaa',font:{size:12},padding:12}},tooltip:{backgroundColor:'#1a1a1a',titleColor:'#fff',bodyColor:'#ccc'}}}
   });
@@ -392,7 +392,7 @@ function renderAll(){
   chartInstances['typeEngBar'] = new Chart(teCtx, {
     type:'bar',
     data:{labels:['Reel','Foto','Carrossel'],
-      datasets:[{data:[avg(typeEng.reel).toFixed(2),avg([typeEng.photo](http://typeEng.photo)).toFixed(2),avg(typeEng.carousel).toFixed(2)],
+      datasets:[{data:[avg(typeEng.reel).toFixed(2),avg(typeEng.photo).toFixed(2),avg(typeEng.carousel).toFixed(2)],
         backgroundColor:['rgba(168,85,247,.7)','rgba(59,130,246,.7)','rgba(252,176,69,.7)'],borderRadius:8,borderSkipped:false}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1a1a',bodyColor:'#ccc',callbacks:{label:function(c){return c.raw+'%';}}}},
@@ -416,7 +416,7 @@ function renderAll(){
   }).join('');
 
   // Posts table
-  var authVals = [posts.map](http://posts.map)(function(p){ return p.authority_score; }).sort(function(a,b){return a-b;});
+  var authVals = posts.map(function(p){ return p.authority_score; }).sort(function(a,b){return a-b;});
   var auth80 = authVals[Math.floor(authVals.length*0.8)] || 0;
   var classMap = {'Viral':'tag-viral','Top Performer':'tag-top','Crescimento':'tag-growth','Autoridade':'tag-auth','Regular':'tag-reg','Outlier':'tag-reg','Baixo':'tag-low'};
   var tcolorMap = {reel:'#a855f7',photo:'#3b82f6',carousel:'#fcb045'};
@@ -430,7 +430,7 @@ function renderAll(){
     sorted = sorted.slice(0, 30);
     var tbody = document.getElementById('posts-body');
     if(!sorted.length){ tbody.innerHTML = '<tr><td colspan="10" class="no-data">Nenhum post neste filtro</td></tr>'; return; }
-    tbody.innerHTML = [sorted.map](http://sorted.map)(function(p,i){
+    tbody.innerHTML = sorted.map(function(p,i){
       var cl = classify(p, avgReach, avgEng, auth80);
       var tag = classMap[cl] || 'tag-reg';
       var tc = tcolorMap[p.type] || '#aaa';
@@ -438,7 +438,7 @@ function renderAll(){
       return '<tr><td style="font-weight:800;color:var(--accent3);width:30px">#'+(i+1)+'</td>'
         +'<td><div class="post-desc" title="'+p.description.replace(/"/g,"'")+'">'+p.description+'</div></td>'
         +'<td><span style="color:'+tc+';font-weight:700">'+tlabelMap[p.type]+'</span></td>'
-        +'<td style="color:var(--muted);font-size:11px">'+[p.date](http://p.date)+'</td>'
+        +'<td style="color:var(--muted);font-size:11px">'+p.date+'</td>'
         +'<td style="font-weight:700">'+fmtNum(p.reach)+'</td>'
         +'<td style="color:'+engColor+';font-weight:700">'+p.engagement_rate+'%</td>'
         +'<td style="font-weight:600">'+fmtNum(p.comments)+'</td>'
@@ -467,14 +467,14 @@ function renderAll(){
   renderPosts(currentPostFilter);
 
   // Attribution table
-  var maxComments = Math.max.apply(null, [RAW.attribution.map](http://RAW.attribution.map)(function(a){ return a.content && a.content.comments ? a.content.comments : 0; })) || 1;
+  var maxComments = Math.max.apply(null, RAW.attribution.map(function(a){ return a.content && a.content.comments ? a.content.comments : 0; })) || 1;
   var attrBody = document.getElementById('attr-body');
-  attrBody.innerHTML = [RAW.attribution.map](http://RAW.attribution.map)(function(a, i){
+  attrBody.innerHTML = RAW.attribution.map(function(a, i){
     var c = a.content;
     var desc = c ? c.desc.substring(0,60)+(c.desc.length>60?'...':'') : 'â€”';
     var link = c && c.permalink ? '<a class="post-link" href="'+c.permalink+'" target="_blank">Ver â†’</a>' : 'â€”';
     var commBar = c && c.comments > 0 ? '<div>'+fmtNum(c.comments)+'</div><div class="comment-bar"><div class="comment-fill" style="width:'+Math.round(c.comments/maxComments*100)+'%"></div></div>' : 'â€”';
-    var date = c && [c.date](http://c.date) ? [c.date](http://c.date) : 'â€”';
+    var date = c && c.date ? c.date : 'â€”';
     return '<tr>'
       +'<td style="font-weight:800;color:var(--accent3)">#'+(i+1)+'</td>'
       +'<td><span style="font-weight:600;color:var(--text)">'+a.keyword.toUpperCase()+'</span></td>'
@@ -528,8 +528,8 @@ function renderStatic(){
   var sr = document.getElementById('source-row');
   var srcLabels = {organico_manychat:'Organico ManyChat',organico_bio:'Bio / Link_in_bio',pago_meta:'Pago Meta Ads',organico_quente:'Organico Quente',sem_tracking:'Provavel Trafego Pago (sem tag SCK)'};
   var srcColors = {organico_manychat:'var(--green)',organico_bio:'var(--blue)',pago_meta:'var(--purple)',organico_quente:'var(--accent3)',sem_tracking:'var(--accent2)'};
-  sr.innerHTML = RAW.source_[summary.map](http://summary.map)(function(s){
-    var pct = ((s.revenue / [RAW.summary.total](http://RAW.summary.total)_revenue)*100).toFixed(1);
+  sr.innerHTML = RAW.source_summary.map(function(s){
+    var pct = ((s.revenue / RAW.summary.total_revenue)*100).toFixed(1);
     return '<div class="src-card"><div class="src-type">'+( srcLabels[s.source_type]||s.source_type)+'</div>'
       +'<div class="src-val" style="color:'+(srcColors[s.source_type]||'var(--text)')+'">R$'+Math.round(s.revenue).toLocaleString('pt-BR')+'</div>'
       +'<div class="src-sub">'+s.count+' vendas &bull; '+pct+'% do total</div></div>';
@@ -540,10 +540,10 @@ function renderStatic(){
   var slCtx = document.getElementById('salesChart').getContext('2d');
   chartInstances['salesChart'] = new Chart(slCtx, {
     type:'bar',
-    data:{labels:[ws.map](http://ws.map)(function(w){return String(w.week).substring(0,10);}),
+    data:{labels:ws.map(function(w){return String(w.week).substring(0,10);}),
       datasets:[
-        {label:'Faturamento (R$)',data:[ws.map](http://ws.map)(function(w){return Math.round(w.revenue);}),backgroundColor:'rgba(168,85,247,.6)',borderColor:'#a855f7',borderWidth:1,borderRadius:6,yAxisID:'y'},
-        {label:'Vendas',data:[ws.map](http://ws.map)(function(w){return w.count;}),type:'line',borderColor:'#fcb045',backgroundColor:'transparent',borderWidth:2,pointRadius:4,pointBackgroundColor:'#fcb045',tension:.3,yAxisID:'y2'}
+        {label:'Faturamento (R$)',data:ws.map(function(w){return Math.round(w.revenue);}),backgroundColor:'rgba(168,85,247,.6)',borderColor:'#a855f7',borderWidth:1,borderRadius:6,yAxisID:'y'},
+        {label:'Vendas',data:ws.map(function(w){return w.count;}),type:'line',borderColor:'#fcb045',backgroundColor:'transparent',borderWidth:2,pointRadius:4,pointBackgroundColor:'#fcb045',tension:.3,yAxisID:'y2'}
       ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{labels:{color:'#aaa',font:{size:12}}},tooltip:{backgroundColor:'#1a1a1a',titleColor:'#fff',bodyColor:'#ccc'}},
