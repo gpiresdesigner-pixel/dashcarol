@@ -760,6 +760,15 @@ function filterMaioSales(src){
     btn.style.color = active ? '#fff' : 'var(--muted)';
     btn.style.borderColor = active ? 'transparent' : 'var(--border)';
   });
+
+  // Update 3rd column header dynamically
+  var col3hd = document.getElementById('m-sales-col3-hd');
+  if(col3hd){
+    if(src === 'paid') col3hd.innerHTML = '&#128308; An&uacute;ncio (AD)';
+    else if(src === 'organic') col3hd.innerHTML = '&#128279; Keyword ManyChat';
+    else col3hd.innerHTML = 'Keyword / An&uacute;ncio';
+  }
+
   var sales = window._mSales || [];
   var filtered = src==='all' ? sales : sales.filter(function(s){ return s.source_type===src; });
   var srcLabels = {paid:'Pago',organic:'Orgânico',direct:'Direto'};
@@ -771,15 +780,31 @@ function filterMaioSales(src){
   tbody2.innerHTML = shown.map(function(s){
     var color = srcColors[s.source_type]||'#888';
     var label = srcLabels[s.source_type]||s.source_type;
-    var camp = s.utm_co || s.utm_m || '—';
-    if(camp.length > 30) camp = camp.slice(0,30)+'…';
     var pay = s.payment || '—';
     if(pay.length > 15) pay = pay.slice(0,12)+'…';
-    var kw = s.keyword && s.keyword !== '—' ? s.keyword : '<span style="color:var(--muted)">—</span>';
+
+    var col3, col3Style;
+    if(s.source_type === 'paid'){
+      // Show ad name from utm_co — highlight if starts with AD/Ad_
+      var ad = s.utm_co || '—';
+      var isAd = /^ad[_\s]/i.test(ad);
+      col3 = isAd
+        ? '<span style="background:#833ab422;color:#c084fc;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700">'+ad+'</span>'
+        : '<span style="color:var(--muted);font-size:11px">'+ad+'</span>';
+      col3Style = 'padding:7px 6px';
+    } else {
+      // Show ManyChat keyword
+      var kw = s.keyword && s.keyword !== '—' ? s.keyword : null;
+      col3 = kw
+        ? '<span style="color:var(--accent3);font-weight:700">'+kw+'</span>'
+        : '<span style="color:var(--muted)">—</span>';
+      col3Style = 'padding:7px 6px';
+    }
+
     return '<tr style="border-bottom:1px solid #1a1a1a">'+
       '<td style="padding:7px 6px;color:var(--muted);font-size:11px">'+s.date.slice(8)+'/05</td>'+
       '<td style="padding:7px 6px"><span style="background:'+color+'22;color:'+color+';border-radius:4px;padding:2px 8px;font-size:11px;white-space:nowrap">'+label+'</span></td>'+
-      '<td style="padding:7px 6px;font-weight:600;color:var(--accent3)">'+kw+'</td>'+
+      '<td style="'+col3Style+'">'+col3+'</td>'+
       '<td style="padding:7px 6px;color:var(--muted);font-size:11px;white-space:nowrap">'+pay+'</td>'+
       '<td style="padding:7px 6px;text-align:right;font-weight:600;color:var(--green)">R$ '+s.revenue.toFixed(2).replace('.',',')+'</td>'+
       '</tr>';
@@ -885,7 +910,7 @@ function buildMaioHTML(){
         '<thead><tr style="color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">'+
           '<th style="padding:8px 6px">Data</th>'+
           '<th style="padding:8px 6px">Fonte</th>'+
-          '<th style="padding:8px 6px">Keyword ManyChat</th>'+
+          '<th id="m-sales-col3-hd" style="padding:8px 6px">Keyword ManyChat</th>'+
           '<th style="padding:8px 6px">Pgto</th>'+
           '<th style="padding:8px 6px;text-align:right">Valor</th>'+
         '</tr></thead>'+
