@@ -703,6 +703,66 @@ function renderMaio(){
       '<td><a href="'+p.permalink+'" target="_blank" style="color:var(--accent1);text-decoration:none;font-size:11px">↗ Ver</a></td>'+
       '</tr>';
   }).join('');
+
+  // Daily sales table
+  var maxRev = Math.max.apply(null, m.daily_sales.map(function(d){ return d.revenue; }));
+  document.getElementById('m-sales-daily-tbody').innerHTML = m.daily_sales.map(function(d){
+    var barPct = maxRev > 0 ? (d.revenue/maxRev*100).toFixed(0) : 0;
+    var ticket = d.count > 0 ? (d.revenue/d.count).toFixed(2) : '0.00';
+    var dayLabel = d.date.slice(8)+'/05';
+    return '<tr style="border-bottom:1px solid var(--border)">'+
+      '<td style="padding:8px 10px;font-weight:600">'+dayLabel+'</td>'+
+      '<td style="padding:8px 10px;text-align:right;color:var(--accent3)">'+fmtNum(d.count)+'</td>'+
+      '<td style="padding:8px 10px;text-align:right;color:var(--green);font-weight:600">R$ '+fmtNum(d.revenue)+'</td>'+
+      '<td style="padding:8px 10px;text-align:right;color:var(--muted)">R$ '+ticket+'</td>'+
+      '<td style="padding:8px 10px;min-width:120px">'+
+        '<div style="background:var(--border);border-radius:4px;height:8px;width:100%">'+
+          '<div style="background:var(--green);border-radius:4px;height:8px;width:'+barPct+'%"></div>'+
+        '</div>'+
+      '</td>'+
+      '</tr>';
+  }).join('');
+
+  // Sales detail table (all, filterable)
+  window._mSales = m.sales;
+  filterMaioSales('all');
+}
+
+function filterMaioSales(src){
+  // Update buttons
+  ['all','paid','organic','direct'].forEach(function(k){
+    var btn = document.getElementById('ms-btn-'+k);
+    if(!btn) return;
+    var active = k===src;
+    btn.style.background = active ? 'var(--accent1)' : 'var(--card)';
+    btn.style.color = active ? '#fff' : 'var(--muted)';
+    btn.style.borderColor = active ? 'transparent' : 'var(--border)';
+  });
+  var sales = window._mSales || [];
+  var filtered = src==='all' ? sales : sales.filter(function(s){ return s.source_type===src; });
+  var srcLabels = {paid:'Pago',organic:'Orgânico',direct:'Direto'};
+  var srcColors = {paid:'#833ab4',organic:'#22c55e',direct:'#3b82f6'};
+  var LIMIT = 100;
+  var shown = filtered.slice(0, LIMIT);
+  var tbody2 = document.getElementById('m-sales-tbody');
+  if(!tbody2) return;
+  tbody2.innerHTML = shown.map(function(s){
+    var color = srcColors[s.source_type]||'#888';
+    var label = srcLabels[s.source_type]||s.source_type;
+    var camp = s.utm_co || s.utm_m || '—';
+    if(camp.length > 30) camp = camp.slice(0,30)+'…';
+    var pay = s.payment || '—';
+    if(pay.length > 15) pay = pay.slice(0,12)+'…';
+    return '<tr style="border-bottom:1px solid #1a1a1a">'+
+      '<td style="padding:7px 6px;color:var(--muted);font-size:11px">'+s.date.slice(8)+'/05</td>'+
+      '<td style="padding:7px 6px"><span style="background:'+color+'22;color:'+color+';border-radius:4px;padding:2px 8px;font-size:11px;white-space:nowrap">'+label+'</span></td>'+
+      '<td style="padding:7px 6px;color:var(--muted);font-size:11px;white-space:nowrap">'+pay+'</td>'+
+      '<td style="padding:7px 6px;color:var(--muted);font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+camp+'">'+camp+'</td>'+
+      '<td style="padding:7px 6px;text-align:right;font-weight:600;color:var(--green)">R$ '+s.revenue.toFixed(2).replace('.',',')+'</td>'+
+      '</tr>';
+  }).join('');
+  var more = document.getElementById('m-sales-more');
+  if(more) more.innerText = filtered.length > LIMIT ? 'Mostrando '+LIMIT+' de '+filtered.length+' vendas' : 'Total: '+filtered.length+' vendas';
 }
 
 function buildMaioHTML(){
@@ -751,6 +811,41 @@ function buildMaioHTML(){
         '</tr></thead>'+
         '<tbody id="m-posts-tbody"></tbody>'+
       '</table>'+
+    '</div>'+
+
+    '<div class="section-title">Vendas por Dia — Maio 2026</div>'+
+    '<div class="chart-card wide" style="overflow-x:auto">'+
+      '<table style="width:100%;border-collapse:collapse;font-size:12px">'+
+        '<thead><tr style="color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">'+
+          '<th style="padding:8px 10px">Data</th>'+
+          '<th style="padding:8px 10px;text-align:right">Vendas</th>'+
+          '<th style="padding:8px 10px;text-align:right">Receita</th>'+
+          '<th style="padding:8px 10px;text-align:right">Ticket Médio</th>'+
+          '<th style="padding:8px 10px">Barra</th>'+
+        '</tr></thead>'+
+        '<tbody id="m-sales-daily-tbody"></tbody>'+
+      '</table>'+
+    '</div>'+
+
+    '<div class="section-title">Detalhamento de Vendas — Maio 2026</div>'+
+    '<div class="chart-card wide" style="overflow-x:auto">'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
+        '<button onclick="filterMaioSales(\'all\')" id="ms-btn-all" style="background:var(--accent1);border:none;color:#fff;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Todas</button>'+
+        '<button onclick="filterMaioSales(\'paid\')" id="ms-btn-paid" style="background:var(--card);border:1px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Pago</button>'+
+        '<button onclick="filterMaioSales(\'organic\')" id="ms-btn-organic" style="background:var(--card);border:1px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Orgânico</button>'+
+        '<button onclick="filterMaioSales(\'direct\')" id="ms-btn-direct" style="background:var(--card);border:1px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Direto</button>'+
+      '</div>'+
+      '<table style="width:100%;border-collapse:collapse;font-size:12px">'+
+        '<thead><tr style="color:var(--muted);text-align:left;border-bottom:1px solid var(--border)">'+
+          '<th style="padding:8px 6px">Data</th>'+
+          '<th style="padding:8px 6px">Fonte</th>'+
+          '<th style="padding:8px 6px">Pgto</th>'+
+          '<th style="padding:8px 6px">Campanha</th>'+
+          '<th style="padding:8px 6px;text-align:right">Valor</th>'+
+        '</tr></thead>'+
+        '<tbody id="m-sales-tbody"></tbody>'+
+      '</table>'+
+      '<div id="m-sales-more" style="text-align:center;padding:12px;color:var(--muted);font-size:12px"></div>'+
     '</div>'+
   '</div>';
 }
