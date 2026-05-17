@@ -769,6 +769,30 @@ function filterMaioSales(src){
     else col3hd.innerHTML = 'Keyword / An&uacute;ncio';
   }
 
+  // Update 5th column header
+  var col5hd = document.getElementById('m-sales-col-link-hd');
+  if(col5hd){
+    if(src === 'paid') col5hd.innerText = '—';
+    else col5hd.innerText = 'Conteúdo';
+  }
+
+  // Build keyword → permalink map from posts
+  var kwPostMap = {};
+  (RAW_MAIO.posts || []).forEach(function(p){
+    if(p.keyword && p.keyword !== '' && !kwPostMap[p.keyword]){
+      kwPostMap[p.keyword] = p.permalink;
+    }
+    // also index by keyword to handle multiple posts with same keyword
+    // prefer the one with highest reach
+    if(p.keyword && p.keyword !== ''){
+      var existing = kwPostMap['_reach_'+p.keyword] || 0;
+      if(p.reach > existing){
+        kwPostMap[p.keyword] = p.permalink;
+        kwPostMap['_reach_'+p.keyword] = p.reach;
+      }
+    }
+  });
+
   var sales = window._mSales || [];
   var filtered = src==='all' ? sales : sales.filter(function(s){ return s.source_type===src; });
   var srcLabels = {paid:'Pago',organic:'Orgânico',direct:'Direto'};
@@ -783,29 +807,46 @@ function filterMaioSales(src){
     var pay = s.payment || '—';
     if(pay.length > 15) pay = pay.slice(0,12)+'…';
 
-    var col3, col3Style;
+    var col3;
     if(s.source_type === 'paid'){
-      // Show ad name from utm_co — highlight if starts with AD/Ad_
       var ad = s.utm_co || '—';
       var isAd = /^ad[_\s]/i.test(ad);
       col3 = isAd
         ? '<span style="background:#833ab422;color:#c084fc;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700">'+ad+'</span>'
         : '<span style="color:var(--muted);font-size:11px">'+ad+'</span>';
-      col3Style = 'padding:7px 6px';
     } else {
-      // Show ManyChat keyword
       var kw = s.keyword && s.keyword !== '—' ? s.keyword : null;
       col3 = kw
         ? '<span style="color:var(--accent3);font-weight:700">'+kw+'</span>'
         : '<span style="color:var(--muted)">—</span>';
-      col3Style = 'padding:7px 6px';
+    }
+
+    // Content link column
+    var col5;
+    if(s.source_type === 'paid'){
+      col5 = '<span style="color:var(--muted)">—</span>';
+    } else {
+      var kw2 = s.keyword && s.keyword !== '—' ? s.keyword : null;
+      var postUrl = kw2 ? kwPostMap[kw2] : null;
+      if(postUrl){
+        col5 = '<a href="'+postUrl+'" target="_blank" title="Ver reel de '+kw2+'" '+
+          'style="display:inline-flex;align-items:center;gap:4px;background:#833ab422;color:#a855f7;'+
+          'border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;text-decoration:none">'+
+          '&#8599; '+kw2+'</a>';
+      } else if(kw2 === 'LINK BIO'){
+        col5 = '<a href="https://www.instagram.com/carolzonato_nutri/" target="_blank" '+
+          'style="color:var(--muted);font-size:11px;text-decoration:none">&#8599; Perfil IG</a>';
+      } else {
+        col5 = '<span style="color:var(--muted)">—</span>';
+      }
     }
 
     return '<tr style="border-bottom:1px solid #1a1a1a">'+
       '<td style="padding:7px 6px;color:var(--muted);font-size:11px">'+s.date.slice(8)+'/05</td>'+
       '<td style="padding:7px 6px"><span style="background:'+color+'22;color:'+color+';border-radius:4px;padding:2px 8px;font-size:11px;white-space:nowrap">'+label+'</span></td>'+
-      '<td style="'+col3Style+'">'+col3+'</td>'+
+      '<td style="padding:7px 6px">'+col3+'</td>'+
       '<td style="padding:7px 6px;color:var(--muted);font-size:11px;white-space:nowrap">'+pay+'</td>'+
+      '<td style="padding:7px 6px">'+col5+'</td>'+
       '<td style="padding:7px 6px;text-align:right;font-weight:600;color:var(--green)">R$ '+s.revenue.toFixed(2).replace('.',',')+'</td>'+
       '</tr>';
   }).join('');
@@ -912,6 +953,7 @@ function buildMaioHTML(){
           '<th style="padding:8px 6px">Fonte</th>'+
           '<th id="m-sales-col3-hd" style="padding:8px 6px">Keyword ManyChat</th>'+
           '<th style="padding:8px 6px">Pgto</th>'+
+          '<th id="m-sales-col-link-hd" style="padding:8px 6px">Conteudo</th>'+
           '<th style="padding:8px 6px;text-align:right">Valor</th>'+
         '</tr></thead>'+
         '<tbody id="m-sales-tbody"></tbody>'+
